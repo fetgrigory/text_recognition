@@ -33,7 +33,8 @@ text_box.pack()
 # Function for image display
 def display_image(file_path):
     image = Image.open(file_path)
-    image = image.resize((400, 400))  # Изменение размера изображения для отображения
+    # Resizing the image to display
+    image = image.resize((400, 400))
     photo = ImageTk.PhotoImage(image)
     image_label.config(image=photo)
     image_label.image = photo
