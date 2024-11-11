@@ -91,7 +91,7 @@ def copy_text():
 def resize_textbox(event):
     text_box.config(height=text_box.index('end - 1 line').split('.')[0])
 text_box.bind('<KeyRelease>', resize_textbox)
-# Создание Combobox для выбора языка
+# Creating a Combobox for language selection
 language_combobox = Combobox(root, values=['eng', 'rus'])
 language_combobox.set('eng')
 language_combobox.pack()
