@@ -8,136 +8,175 @@ Ending 2024//
 '''
 # Installing the necessary libraries
 import tkinter as tk
-from tkinter import filedialog
+from tkinter import filedialog, messagebox
 from tkinter.ttk import Combobox, Radiobutton, Progressbar
 import pytesseract
 import easyocr
 import cv2
 import numpy as np
 from PIL import Image, ImageTk
-from tkinter.messagebox import showinfo
-from tkinter import messagebox
-# Setting the path to the Tesseract OCR executable (if not installed on the system)
-pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
-# Creating a graphical interface
-root = tk.Tk()
-root.title("Распознавание текста")
-root.geometry("800x600")
-# Creating an image display field
-image_label = tk.Label(root)
-image_label.pack()
-# Creating a text field
-text_box = tk.Text(root, height=30, width=80)
-text_box.pack()
-
-# Function for image display
-def display_image(file_path):
-    image = Image.open(file_path)
-    # Resizing the image to display
-    image = image.resize((400, 400))
-    photo = ImageTk.PhotoImage(image)
-    image_label.config(image=photo)
-    image_label.image = photo
-# Function for opening a text file
-def open_file():
-    file_path = filedialog.askopenfilename(filetypes=[("Текстовые файлы", "*.txt")])
-    if file_path:
-        with open(file_path, "r") as file:
-            text = file.read()
-            text_box.delete("1.0", tk.END)
-            text_box.insert(tk.END, text)
-
-# Function for extracting text from an image
-def extract_text():
-    file_path = filedialog.askopenfilename(filetypes=[("Изображения", "*.jpeg;*.jpg;*.png")])
-    if file_path:
-        display_image(file_path)
-
-        selected_engine = engine_var.get()
-        if selected_engine == "Tesseract":
-            image = Image.open(file_path)
-            image = image.convert("RGB")
-            image_cv = np.array(image)
-            gray = cv2.cvtColor(image_cv, cv2.COLOR_RGB2GRAY)
-            text = pytesseract.image_to_string(gray, lang=language_combobox.get())
-        elif selected_engine == "EasyOCR":
-            reader = easyocr.Reader(['en', 'ru'])
-            image = Image.open(file_path)
-            text = reader.readtext(np.array(image))
-
-        text_box.delete("1.0", tk.END)
-        text_box.insert(tk.END, text)
-# Updating the Progressbar and displaying a completion message
-        progress_bar.step(100)
-        showinfo("Распознавание завершено", "Текст успешно извлечен из изображения.")
-
-# Function for saving text to a file
-def save_file():
-    text = text_box.get("1.0", tk.END)
-    file_path = filedialog.asksaveasfilename(defaultextension=".txt", filetypes=[("Текстовые файлы", "*.txt")])
-    if file_path:
-        with open(file_path, "w") as file:
-            file.write(text)
-# Function to clear the text field
-def clear_text():
-    text_box.delete("1.0", tk.END)
-# Function for copying text to clipboard
-def copy_text():
-    text = text_box.get("1.0", tk.END)
-    root.clipboard_clear()
-    root.clipboard_append(text)
-
-# Resizing the text field based on the content
-def resize_textbox(event):
-    text_box.config(height=text_box.index('end - 1 line').split('.')[0])
-text_box.bind('<KeyRelease>', resize_textbox)
-# Creating a Combobox for language selection
-language_combobox = Combobox(root, values=['eng', 'rus'])
-language_combobox.set('eng')
-language_combobox.pack()
-# Creating a Radiobutton to select the recognition library
-engine_var = tk.StringVar()
-engine_var.set("Tesseract")
-engine_frame = tk.Frame(root)
-engine_frame.pack()
-engine_label = tk.Label(engine_frame, text="Выберите библиотеку распознавания:")
-engine_label.pack()
-tesseract_button = Radiobutton(engine_frame, text="Tesseract", variable=engine_var, value="Tesseract")
-tesseract_button.pack()
-easyocr_button = Radiobutton(engine_frame, text="EasyOCR", variable=engine_var, value="EasyOCR")
-easyocr_button.pack()
-# Creating buttons
-open_button = tk.Button(root, text="Открыть файл", command=open_file)
-open_button.pack()
-extract_button = tk.Button(root, text="Извлечь текст", command=extract_text)
-extract_button.pack()
-save_button = tk.Button(root, text="Сохранить файл", command=save_file)
-save_button.pack()
-clear_button = tk.Button(root, text="Очистить текст", command=clear_text)
-clear_button.pack()
-copy_button = tk.Button(root, text="Копировать текст", command=copy_text)
-copy_button.pack()
-# Creating a Progressbar
-progress_bar = Progressbar(root, orient=tk.HORIZONTAL, length=400, mode='determinate')
-progress_bar.pack()
 
 
-# Program information display function
-def show_info():
-    messagebox.showinfo("О программе", "Распознавание текста v1.0\nАвтор: Феткулин Григорий")
-# Создание главного меню
-main_menu = tk.Menu()
-file_menu = tk.Menu()
-file_menu.add_command(label="Открыть", command=open_file)
-file_menu.add_command(label="Сохранить", command=save_file)
-main_menu.add_cascade(label="Файл", menu=file_menu)
-edit_menu = tk.Menu()
-edit_menu.add_command(label="Очистить", command=clear_text)
-edit_menu.add_command(label="Копировать", command=copy_text)
-main_menu.add_cascade(label="Редактировать", menu=edit_menu)
-help_menu = tk.Menu()
-help_menu.add_command(label="О программе", command=show_info)
-main_menu.add_cascade(label="Справка", menu=help_menu)
-root.config(menu=main_menu)
-# Starting the main cycle
-root.mainloop()
+class TextRecognitionApp:
+    """AI is creating summary for
+    """
+    def __init__(self, root):
+        # Initialization of the main application frame
+        self.root = root
+        self.root.title("Распознавание текста")
+        self.root.geometry("800x600")
+
+        # Setup Tesseract path
+        self.setup_tesseract()
+
+        # Create GUI components
+        self.create_widgets()
+        self.create_menu()
+
+    def setup_tesseract(self):
+        """AI is creating summary for setup_tesseract
+        """
+        pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+
+    def create_widgets(self):
+        """AI is creating summary for create_widgets
+        """
+        # Image display field
+        self.image_label = tk.Label(self.root)
+        self.image_label.pack()
+
+        # Text field
+        self.text_box = tk.Text(self.root, height=30, width=80)
+        self.text_box.pack()
+
+        # Language selection Combobox
+        self.language_combobox = Combobox(self.root, values=['eng', 'rus'])
+        self.language_combobox.set('eng')
+        self.language_combobox.pack()
+
+        # Engine selection Radiobuttons
+        self.engine_var = tk.StringVar(value="Tesseract")
+        self.engine_frame = tk.Frame(self.root)
+        self.engine_frame.pack()
+        tk.Label(self.engine_frame, text="Выберите библиотеку распознавания:").pack()
+        Radiobutton(self.engine_frame, text="Tesseract", variable=self.engine_var, value="Tesseract").pack()
+        Radiobutton(self.engine_frame, text="EasyOCR", variable=self.engine_var, value="EasyOCR").pack()
+
+        # Buttons
+        tk.Button(self.root, text="Открыть файл", command=self.open_file).pack()
+        tk.Button(self.root, text="Извлечь текст", command=self.extract_text).pack()
+        tk.Button(self.root, text="Сохранить файл", command=self.save_file).pack()
+        tk.Button(self.root, text="Очистить текст", command=self.clear_text).pack()
+        tk.Button(self.root, text="Копировать текст", command=self.copy_text).pack()
+
+        # Progressbar
+        self.progress_bar = Progressbar(self.root, orient=tk.HORIZONTAL, length=400, mode='determinate')
+        self.progress_bar.pack()
+
+        # Bind resize event
+        self.text_box.bind('<KeyRelease>', self.resize_textbox)
+
+    def create_menu(self):
+        """AI is creating summary for create_menu
+        """
+        main_menu = tk.Menu()
+
+        file_menu = tk.Menu(main_menu, tearoff=0)
+        file_menu.add_command(label="Открыть", command=self.open_file)
+        file_menu.add_command(label="Сохранить", command=self.save_file)
+        main_menu.add_cascade(label="Файл", menu=file_menu)
+
+        edit_menu = tk.Menu(main_menu, tearoff=0)
+        edit_menu.add_command(label="Очистить", command=self.clear_text)
+        edit_menu.add_command(label="Копировать", command=self.copy_text)
+        main_menu.add_cascade(label="Редактировать", menu=edit_menu)
+
+        help_menu = tk.Menu(main_menu, tearoff=0)
+        help_menu.add_command(label="О программе", command=self.show_info)
+        main_menu.add_cascade(label="Справка", menu=help_menu)
+
+        self.root.config(menu=main_menu)
+
+    def display_image(self, file_path):
+        """AI is creating summary for display_image
+
+        Args:
+            file_path ([type]): [description]
+        """
+        image = Image.open(file_path).resize((400, 400))
+        photo = ImageTk.PhotoImage(image)
+        self.image_label.config(image=photo)
+        self.image_label.image = photo
+
+    def open_file(self):
+        """AI is creating summary for open_file
+        """
+        file_path = filedialog.askopenfilename(filetypes=[("Текстовые файлы", "*.txt")])
+        if file_path:
+            with open(file_path, "r") as file:
+                text = file.read()
+                self.text_box.delete("1.0", tk.END)
+                self.text_box.insert(tk.END, text)
+
+    def extract_text(self):
+        """AI is creating summary for extract_text
+        """
+        file_path = filedialog.askopenfilename(filetypes=[("Изображения", "*.jpeg;*.jpg;*.png")])
+        if file_path:
+            self.display_image(file_path)
+            selected_engine = self.engine_var.get()
+            text = ""
+            if selected_engine == "Tesseract":
+                image = Image.open(file_path).convert("RGB")
+                image_cv = np.array(image)
+                gray = cv2.cvtColor(image_cv, cv2.COLOR_RGB2GRAY)
+                text = pytesseract.image_to_string(gray, lang=self.language_combobox.get())
+            elif selected_engine == "EasyOCR":
+                reader = easyocr.Reader(['en', 'ru'])
+                image = Image.open(file_path)
+                results = reader.readtext(np.array(image))
+                text = ' '.join([res[1] for res in results])
+
+            self.text_box.delete("1.0", tk.END)
+            self.text_box.insert(tk.END, text)
+            self.progress_bar.step(100)
+            messagebox.showinfo("Распознавание завершено", "Текст успешно извлечен из изображения.")
+
+    def save_file(self):
+        """AI is creating summary for save_file
+        """
+        text = self.text_box.get("1.0", tk.END)
+        file_path = filedialog.asksaveasfilename(defaultextension=".txt", filetypes=[("Текстовые файлы", "*.txt")])
+        if file_path:
+            with open(file_path, "w") as file:
+                file.write(text)
+
+    def clear_text(self):
+        """AI is creating summary for clear_text
+        """
+        self.text_box.delete("1.0", tk.END)
+
+    def copy_text(self):
+        """Copy the content of the text box to the clipboard."""
+        text = self.text_box.get("1.0", tk.END)
+        self.root.clipboard_clear()
+        self.root.clipboard_append(text)
+
+    def resize_textbox(self, event):
+        """AI is creating summary for resize_textbox
+
+        Args:
+            event ([type]): [description]
+        """
+        self.text_box.config(height=self.text_box.index('end-1c').split('.')[0])
+
+    def show_info(self):
+        """AI is creating summary for show_info
+        """
+        messagebox.showinfo("О программе", "Распознавание текста v1.0\nАвтор: Феткулин Григорий")
+
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = TextRecognitionApp(root)
+    root.mainloop()
