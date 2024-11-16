@@ -19,7 +19,11 @@ from PIL import Image, ImageTk
 
 class TextRecognitionEngine:
     """AI is creating summary for
+
+    Raises:
+        NotImplementedError: [description]
     """
+    # This class provides functionality for text recognition from images using OCR
     def __init__(self):
         self.language = 'eng'
 
@@ -40,7 +44,8 @@ class TextRecognitionEngine:
         Raises:
             NotImplementedError: [description]
         """
-        raise NotImplementedError("Метод extract_text должен быть переопределен в дочернем классе.")
+        # This method is not implemented in the base class and must be implemented in subclasses.
+        raise NotImplementedError("Метод extract_text должен быть переопределен в дочернем классе.") 
 
 
 class TesseractEngine(TextRecognitionEngine):
@@ -48,9 +53,14 @@ class TesseractEngine(TextRecognitionEngine):
 
     Args:
         TextRecognitionEngine ([type]): [description]
+
+    Returns:
+        [type]: [description]
     """
+    # This class provides functionality for text recognition from images using Tesseract
     def __init__(self):
         super().__init__()
+        # Set the path to the Tesseract executable
         pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
 
     def extract_text(self, image_path):
@@ -62,9 +72,13 @@ class TesseractEngine(TextRecognitionEngine):
         Returns:
             [type]: [description]
         """
+        # Open the image and convert it to RGB format
         image = Image.open(image_path).convert("RGB")
+        # Convert the image to a NumPy array
         image_cv = np.array(image)
+        # Convert the image to grayscale
         gray = cv2.cvtColor(image_cv, cv2.COLOR_RGB2GRAY)
+        # Use Tesseract to extract text from the image
         return pytesseract.image_to_string(gray, lang=self.language)
 
 
@@ -76,6 +90,7 @@ class EasyOCREngine(TextRecognitionEngine):
     """
     def __init__(self):
         super().__init__()
+        # Initialize the EasyOCR reader with supported languages
         self.reader = easyocr.Reader(['en', 'ru'])
 
     def extract_text(self, image_path):
@@ -87,8 +102,11 @@ class EasyOCREngine(TextRecognitionEngine):
         Returns:
             [type]: [description]
         """
+        # Open the image
         image = Image.open(image_path)
+        # Use EasyOCR to extract text from the image
         results = self.reader.readtext(np.array(image))
+        # Join the extracted text into a single string
         return ' '.join([res[1] for res in results])
 
 
@@ -149,22 +167,19 @@ class TextRecognitionApp:
     def create_menu(self):
         """AI is creating summary for create_menu
         """
+        # Creating a menu
         main_menu = tk.Menu()
-
         file_menu = tk.Menu(main_menu, tearoff=0)
         file_menu.add_command(label="Открыть", command=self.open_file)
         file_menu.add_command(label="Сохранить", command=self.save_file)
         main_menu.add_cascade(label="Файл", menu=file_menu)
-
         edit_menu = tk.Menu(main_menu, tearoff=0)
         edit_menu.add_command(label="Очистить", command=self.clear_text)
         edit_menu.add_command(label="Копировать", command=self.copy_text)
         main_menu.add_cascade(label="Редактировать", menu=edit_menu)
-
         help_menu = tk.Menu(main_menu, tearoff=0)
         help_menu.add_command(label="О программе", command=self.show_info)
         main_menu.add_cascade(label="Справка", menu=help_menu)
-
         self.root.config(menu=main_menu)
 
     def display_image(self, file_path):
@@ -173,6 +188,7 @@ class TextRecognitionApp:
         Args:
             file_path ([type]): [description]
         """
+        # Displays the image in the image label
         image = Image.open(file_path).resize((400, 400))
         photo = ImageTk.PhotoImage(image)
         self.image_label.config(image=photo)
@@ -181,6 +197,7 @@ class TextRecognitionApp:
     def open_file(self):
         """AI is creating summary for open_file
         """
+        # Opens a text file and displays its contents in the text box
         file_path = filedialog.askopenfilename(filetypes=[("Текстовые файлы", "*.txt")])
         if file_path:
             with open(file_path, "r") as file:
@@ -191,6 +208,7 @@ class TextRecognitionApp:
     def extract_text(self):
         """AI is creating summary for extract_text
         """
+        # Extracts text from an image using the selected OCR engine
         file_path = filedialog.askopenfilename(filetypes=[("Изображения", "*.jpeg;*.jpg;*.png")])
         if file_path:
             self.display_image(file_path)
@@ -205,6 +223,7 @@ class TextRecognitionApp:
     def save_file(self):
         """AI is creating summary for save_file
         """
+        # Saves the text from the text box to a file
         text = self.text_box.get("1.0", tk.END)
         file_path = filedialog.asksaveasfilename(defaultextension=".txt", filetypes=[("Текстовые файлы", "*.txt")])
         if file_path:
@@ -214,11 +233,13 @@ class TextRecognitionApp:
     def clear_text(self):
         """AI is creating summary for clear_text
         """
+        # Clears the text from the text box
         self.text_box.delete("1.0", tk.END)
 
     def copy_text(self):
         """AI is creating summary for copy_text
         """
+        # Copies the text from the text box to the clipboard
         text = self.text_box.get("1.0", tk.END)
         self.root.clipboard_clear()
         self.root.clipboard_append(text)
@@ -229,16 +250,19 @@ class TextRecognitionApp:
         Args:
             event ([type]): [description]
         """
+        # Resizes the text box to fit the content
         self.text_box.config(height=self.text_box.index('end-1c').split('.')[0])
 
     def show_info(self):
         """AI is creating summary for show_info
         """
+        # Displays information about the program
         messagebox.showinfo("О программе", "Распознавание текста v1.0\nАвтор: Феткулин Григорий")
 
     def set_engine(self):
         """AI is creating summary for set_engine
         """
+        # Sets the OCR engine based on the user's selection
         engine_name = self.engine_var.get()
         if engine_name == "Tesseract":
             self.engine = TesseractEngine()
