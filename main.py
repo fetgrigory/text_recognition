@@ -17,6 +17,81 @@ import numpy as np
 from PIL import Image, ImageTk
 
 
+class TextRecognitionEngine:
+    """AI is creating summary for
+    """
+    def __init__(self):
+        self.language = 'eng'
+
+    def set_language(self, language):
+        """AI is creating summary for set_language
+
+        Args:
+            language ([type]): [description]
+        """
+        self.language = language
+
+    def extract_text(self, image_path):
+        """AI is creating summary for extract_text
+
+        Args:
+            image_path ([type]): [description]
+
+        Raises:
+            NotImplementedError: [description]
+        """
+        raise NotImplementedError("Метод extract_text должен быть переопределен в дочернем классе.")
+
+
+class TesseractEngine(TextRecognitionEngine):
+    """AI is creating summary for TesseractEngine
+
+    Args:
+        TextRecognitionEngine ([type]): [description]
+    """
+    def __init__(self):
+        super().__init__()
+        pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+
+    def extract_text(self, image_path):
+        """AI is creating summary for extract_text
+
+        Args:
+            image_path ([type]): [description]
+
+        Returns:
+            [type]: [description]
+        """
+        image = Image.open(image_path).convert("RGB")
+        image_cv = np.array(image)
+        gray = cv2.cvtColor(image_cv, cv2.COLOR_RGB2GRAY)
+        return pytesseract.image_to_string(gray, lang=self.language)
+
+
+class EasyOCREngine(TextRecognitionEngine):
+    """AI is creating summary for EasyOCREngine
+
+    Args:
+        TextRecognitionEngine ([type]): [description]
+    """
+    def __init__(self):
+        super().__init__()
+        self.reader = easyocr.Reader(['en', 'ru'])
+
+    def extract_text(self, image_path):
+        """AI is creating summary for extract_text
+
+        Args:
+            image_path ([type]): [description]
+
+        Returns:
+            [type]: [description]
+        """
+        image = Image.open(image_path)
+        results = self.reader.readtext(np.array(image))
+        return ' '.join([res[1] for res in results])
+
+
 class TextRecognitionApp:
     """AI is creating summary for
     """
@@ -26,17 +101,12 @@ class TextRecognitionApp:
         self.root.title("Распознавание текста")
         self.root.geometry("800x600")
 
-        # Setup Tesseract path
-        self.setup_tesseract()
+        # Default engine initialization (Tesseract)
+        self.engine = TesseractEngine()
 
         # Create GUI components
         self.create_widgets()
         self.create_menu()
-
-    def setup_tesseract(self):
-        """AI is creating summary for setup_tesseract
-        """
-        pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
 
     def create_widgets(self):
         """AI is creating summary for create_widgets
@@ -59,8 +129,8 @@ class TextRecognitionApp:
         self.engine_frame = tk.Frame(self.root)
         self.engine_frame.pack()
         tk.Label(self.engine_frame, text="Выберите библиотеку распознавания:").pack()
-        Radiobutton(self.engine_frame, text="Tesseract", variable=self.engine_var, value="Tesseract").pack()
-        Radiobutton(self.engine_frame, text="EasyOCR", variable=self.engine_var, value="EasyOCR").pack()
+        Radiobutton(self.engine_frame, text="Tesseract", variable=self.engine_var, value="Tesseract", command=self.set_engine).pack()
+        Radiobutton(self.engine_frame, text="EasyOCR", variable=self.engine_var, value="EasyOCR", command=self.set_engine).pack()
 
         # Buttons
         tk.Button(self.root, text="Открыть файл", command=self.open_file).pack()
@@ -73,7 +143,7 @@ class TextRecognitionApp:
         self.progress_bar = Progressbar(self.root, orient=tk.HORIZONTAL, length=400, mode='determinate')
         self.progress_bar.pack()
 
-        # Bind resize event
+        # Binding a text field resizing event
         self.text_box.bind('<KeyRelease>', self.resize_textbox)
 
     def create_menu(self):
@@ -124,18 +194,8 @@ class TextRecognitionApp:
         file_path = filedialog.askopenfilename(filetypes=[("Изображения", "*.jpeg;*.jpg;*.png")])
         if file_path:
             self.display_image(file_path)
-            selected_engine = self.engine_var.get()
-            text = ""
-            if selected_engine == "Tesseract":
-                image = Image.open(file_path).convert("RGB")
-                image_cv = np.array(image)
-                gray = cv2.cvtColor(image_cv, cv2.COLOR_RGB2GRAY)
-                text = pytesseract.image_to_string(gray, lang=self.language_combobox.get())
-            elif selected_engine == "EasyOCR":
-                reader = easyocr.Reader(['en', 'ru'])
-                image = Image.open(file_path)
-                results = reader.readtext(np.array(image))
-                text = ' '.join([res[1] for res in results])
+            self.engine.set_language(self.language_combobox.get())
+            text = self.engine.extract_text(file_path)
 
             self.text_box.delete("1.0", tk.END)
             self.text_box.insert(tk.END, text)
@@ -157,7 +217,8 @@ class TextRecognitionApp:
         self.text_box.delete("1.0", tk.END)
 
     def copy_text(self):
-        """Copy the content of the text box to the clipboard."""
+        """AI is creating summary for copy_text
+        """
         text = self.text_box.get("1.0", tk.END)
         self.root.clipboard_clear()
         self.root.clipboard_append(text)
@@ -174,6 +235,15 @@ class TextRecognitionApp:
         """AI is creating summary for show_info
         """
         messagebox.showinfo("О программе", "Распознавание текста v1.0\nАвтор: Феткулин Григорий")
+
+    def set_engine(self):
+        """AI is creating summary for set_engine
+        """
+        engine_name = self.engine_var.get()
+        if engine_name == "Tesseract":
+            self.engine = TesseractEngine()
+        elif engine_name == "EasyOCR":
+            self.engine = EasyOCREngine()
 
 
 if __name__ == "__main__":
