@@ -270,6 +270,7 @@ class TextRecognitionApp:
             self.engine = EasyOCREngine()
 
 
+# Run the application
 if __name__ == "__main__":
     root = tk.Tk()
     app = TextRecognitionApp(root)
